@@ -1,13 +1,10 @@
-import { signal, Signal } from './signal';
-import { createConsoleLogger } from '~common/utilities/logger';
-import { v4 as uuid } from 'uuid';
-
-const logger = createConsoleLogger('signal-to-dom');
+import { signal, Signal } from "./signal";
+import { RNG } from "./utilities";
 
 const getDataKey = (i: unknown | Signal<unknown>) => {
-  if (i instanceof Signal) return i.value['data-key'];
-  if (i instanceof Element) return i.getAttribute('data-key');
-  return i instanceof Object && i && 'data-key' in i && i['data-key'];
+  if (i instanceof Signal) return i.value["data-key"];
+  if (i instanceof Element) return i.getAttribute("data-key");
+  return i instanceof Object && i && "data-key" in i && i["data-key"];
 };
 
 /**
@@ -18,20 +15,11 @@ const getDataKey = (i: unknown | Signal<unknown>) => {
  * element need property key, notice the key below
  * ['abc','def'].map(str => <div key={str}>{str}</div>)
  */
-export function SignalsToDoms<
-  X extends Record<string, unknown> & { 'data-key'?: string },
->(newSignal: Signal<X[]>) {
-  const handleMapFn = (
-    cb: (
-      item: Signal<X>,
-      idx: number,
-      arr: X[],
-    ) => HTMLElement & { 'data-key'?: string },
-  ) => {
+export function SignalsToDoms<X extends Record<string, unknown> & { "data-key"?: string }>(newSignal: Signal<X[]>) {
+  const handleMapFn = (cb: (item: Signal<X>, idx: number, arr: X[]) => HTMLElement & { "data-key"?: string }) => {
     const newChildrenIds: string[] = [];
     const arrayOfElements = newSignal.value.map((objOrSignal, idx) => {
-      const sig =
-        objOrSignal instanceof Signal ? objOrSignal : signal(objOrSignal);
+      const sig = objOrSignal instanceof Signal ? objOrSignal : signal(objOrSignal);
       const item = cb(sig, idx, newSignal.value);
 
       if (!item || !(item instanceof Element)) {
@@ -39,17 +27,15 @@ export function SignalsToDoms<
       }
 
       let dataKey =
-        item.getAttribute('data-key') ?? // use old data-key
+        item.getAttribute("data-key") ?? // use old data-key
         getDataKey(objOrSignal) ?? // or use data-key that is passed in signal
-        item['data-key']; // or property data-key
+        item["data-key"]; // or property data-key
       if (!dataKey) {
-        logger.warn(
-          `Warning: find a list of item that has no data-key, please include data-key to avoid rerending this item:  ${item}`,
-        );
+        console.warn(`Warning: find a list of item that has no data-key, please include data-key to avoid rerending this item:  ${item}`);
       }
-      dataKey = dataKey ?? uuid();
+      dataKey = dataKey ?? RNG(10);
 
-      item.setAttribute('data-key', dataKey);
+      item.setAttribute("data-key", dataKey);
       newChildrenIds.push(dataKey);
       return item;
     });

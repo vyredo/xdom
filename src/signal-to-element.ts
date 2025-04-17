@@ -1,5 +1,5 @@
-import { Signal } from './signal';
-import { SignalsToDoms } from './signal-to-dom';
+import { Signal } from "./signal";
+import { SignalsToDoms } from "./signal-to-dom";
 
 const mapIdToWeakRef = new Map<string, WeakRef<Element>>();
 
@@ -10,7 +10,7 @@ export class SignalToElement {
   // handle case when Signal is pass as child of element
   static renderAndSubscribe = (element: HTMLElement, signal: Signal) => {
     if (!(element instanceof HTMLElement)) {
-      throw new Error('this is not sqrx element ' + element);
+      throw new Error("this is not sqrx element " + element);
     }
 
     let oldNode: Element | undefined;
@@ -33,15 +33,15 @@ export class SignalToElement {
       if (Array.isArray(newValue) && newValue[0] instanceof Element) {
         newValue.forEach((el) => {
           // Check if item is to be removed
-          if (el instanceof HTMLElement && el.getAttribute('data-to-unmount')) {
+          if (el instanceof HTMLElement && el.getAttribute("data-to-unmount")) {
             el.remove();
             return;
           }
 
           // Check if each new element has a data-key
-          const dataKey = el.getAttribute('data-key');
+          const dataKey = el.getAttribute("data-key");
           if (el instanceof HTMLElement && el && !dataKey) {
-            weakElement.innerHTML = '';
+            weakElement.innerHTML = "";
             throw new Error(`element does not contain data-key, use function ${SignalsToDoms.name} if you want to 
               convert array of signal to elements
               `);
@@ -60,7 +60,7 @@ export class SignalToElement {
           const newAttributes = findAttributeDifference(oldElement, el);
           if (newAttributes.length > 0) {
             newAttributes.forEach(({ attribute, value }) => {
-              if (attribute === 'style.cssText') {
+              if (attribute === "style.cssText") {
                 el.style.cssText = value;
                 return;
               }
@@ -77,20 +77,15 @@ export class SignalToElement {
         return;
       }
 
-      weakElement.textContent =
-        signal.value != null ? String(signal.value) : '';
+      weakElement.textContent = signal.value != null ? String(signal.value) : "";
     });
   };
 
   // handle case when Signal is pass to attribute
   // if the attribute is `value`, this function will try to listen to 'input' event
-  static subscribeAttribute = (
-    element: HTMLElement,
-    attributeName: string,
-    signal: Signal,
-  ) => {
+  static subscribeAttribute = (element: HTMLElement, attributeName: string, signal: Signal) => {
     if (!(element instanceof HTMLElement)) {
-      throw new Error('this is not sqrx element ' + element);
+      throw new Error("this is not sqrx element " + element);
     }
 
     const updateAttribute = (v: string, el: HTMLElement | undefined) => {
@@ -116,20 +111,9 @@ export class SignalToElement {
       updateAttribute(newValue, weakElement);
 
       // for attribute value, we will automatically listen to input event
-      if (attributeName === 'value') {
-        const elementHasValueAttribute = (
-          el: HTMLElement | EventTarget | null,
-        ): el is HTMLElement & { value: string } => {
-          return (
-            !!el &&
-            [
-              HTMLInputElement,
-              HTMLSelectElement,
-              HTMLMeterElement,
-              HTMLProgressElement,
-              HTMLTextAreaElement,
-            ].some((ClassName) => el instanceof ClassName)
-          );
+      if (attributeName === "value") {
+        const elementHasValueAttribute = (el: HTMLElement | EventTarget | null): el is HTMLElement & { value: string } => {
+          return !!el && [HTMLInputElement, HTMLSelectElement, HTMLMeterElement, HTMLProgressElement, HTMLTextAreaElement].some((ClassName) => el instanceof ClassName);
         };
 
         if (
@@ -143,8 +127,8 @@ export class SignalToElement {
             }
           };
 
-          weakElement.removeEventListener('input', inputCallback);
-          weakElement.addEventListener('input', inputCallback);
+          weakElement.removeEventListener("input", inputCallback);
+          weakElement.addEventListener("input", inputCallback);
         }
       }
     });
@@ -153,22 +137,22 @@ export class SignalToElement {
 
 function findAttributeDifference(oldEl: Element, newEl: Element) {
   const attributesToCompare = [
-    'id',
-    'class',
-    'className',
-    'src',
-    'href',
-    'alt',
-    'title',
-    'value',
-    'type',
-    'placeholder',
-    'disabled',
-    'readonly',
-    'checked',
-    'selected',
-    'name',
-    'style',
+    "id",
+    "class",
+    "className",
+    "src",
+    "href",
+    "alt",
+    "title",
+    "value",
+    "type",
+    "placeholder",
+    "disabled",
+    "readonly",
+    "checked",
+    "selected",
+    "name",
+    "style",
     // 'data-*',
   ];
 
@@ -185,10 +169,10 @@ function findAttributeDifference(oldEl: Element, newEl: Element) {
   }
 
   // compare style
-  const oldStyle = oldEl instanceof HTMLElement ? oldEl.style.cssText : '';
-  const newStyle = newEl instanceof HTMLElement ? newEl.style.cssText : '';
+  const oldStyle = oldEl instanceof HTMLElement ? oldEl.style.cssText : "";
+  const newStyle = newEl instanceof HTMLElement ? newEl.style.cssText : "";
   if (oldStyle !== newStyle) {
-    result.push({ attribute: 'style.cssText', value: newStyle });
+    result.push({ attribute: "style.cssText", value: newStyle });
   }
 
   return result;
