@@ -1,6 +1,6 @@
 import { Signal } from "./signal";
 import { SignalToElement } from "./signal-to-element";
-
+import { HTMLElementTagMap } from "./types";
 export type HTMLElementEventHandlerKeys = Extract<keyof HTMLElement, `on${string}`>;
 
 // Enable typescript to detect event-based attributes and suggest the correct type
@@ -9,41 +9,30 @@ export type ElementEventHandlers = {
   [K in keyof GlobalEventHandlersEventMap as `on${K}`]?: (this: Element, ev: GlobalEventHandlersEventMap[K]) => any;
 };
 
-export type CreateElementDetails<T extends keyof HTMLElementTagNameMap> = Partial<HTMLElementTagNameMap[T]> & ElementEventHandlers;
+export type CreateElementDetails<T extends keyof HTMLElementTagMap> = Partial<HTMLElementTagMap[T]> & ElementEventHandlers;
 
-export type CreateElementChildren<T extends keyof HTMLElementTagNameMap> =
-  | HTMLElementTagNameMap[T]
+export type CreateElementChildren<T extends keyof HTMLElementTagMap> =
+  | HTMLElementTagMap[T]
   | string
   | Signal
   | false
   | undefined
-  | (HTMLElementTagNameMap[T] | false | undefined | string | Signal)[];
+  | (HTMLElementTagMap[T] | false | undefined | string | Signal)[];
 
-export interface XDOMOverload<T extends keyof HTMLElementTagNameMap> {
-  (children?: CreateElementChildren<T>): HTMLElementTagNameMap[T];
-  (details?: CreateElementDetails<T>, children?: CreateElementChildren<T>): HTMLElementTagNameMap[T];
+export interface XDOMOverload<T extends keyof HTMLElementTagMap> {
+  (children?: CreateElementChildren<T>): HTMLElementTagMap[T];
+  (details?: CreateElementDetails<T>, children?: CreateElementChildren<T>): HTMLElementTagMap[T];
 }
 
-// https://github.com/Microsoft/TypeScript/issues/27024#issuecomment-421529650
-type IfEquals<X, Y, A, B> = (<T>() => T extends X ? 1 : 2) extends <T>() => T extends Y ? 1 : 2 ? A : B;
+export function createDomElement<T extends keyof HTMLElementTagMap>(tagName: T, children?: CreateElementChildren<T>): HTMLElementTagMap[T];
 
-type WritableKeysOf<T> = {
-  [P in keyof T]: IfEquals<{ [Q in P]: T[P] }, { -readonly [Q in P]: T[P] }, P, never>;
-}[keyof T];
-
-export function createDomElement<T extends keyof HTMLElementTagNameMap>(tagName: T, children?: CreateElementChildren<T>): HTMLElementTagNameMap[T];
-
-export function createDomElement<T extends keyof HTMLElementTagNameMap>(
-  tagName: T,
-  details?: CreateElementDetails<T>,
-  children?: CreateElementChildren<T>
-): HTMLElementTagNameMap[T];
-export function createDomElement<T extends keyof HTMLElementTagNameMap>(
+export function createDomElement<T extends keyof HTMLElementTagMap>(tagName: T, details?: CreateElementDetails<T>, children?: CreateElementChildren<T>): HTMLElementTagMap[T];
+export function createDomElement<T extends keyof HTMLElementTagMap>(
   tagName: T,
   details?: CreateElementDetails<T> | CreateElementChildren<T>,
   children?: CreateElementChildren<T>
-): HTMLElementTagNameMap[T] {
-  const element = document.createElement(tagName);
+): HTMLElementTagMap[T] {
+  const element = document.createElement(tagName) as HTMLElementTagMap[T];
 
   if (!details) {
     return element;
@@ -80,10 +69,7 @@ export function createDomElement<T extends keyof HTMLElementTagNameMap>(
     Object.entries(details).forEach(([KEY, value]) => {
       // Almost all attribute keys are lowercase, like maxlength, gradientunits, etc.
       const key = KEY.toLowerCase();
-      const isEventHandlerProperty = (
-        el: HTMLElement,
-        p: string
-      ): p is keyof Omit<GlobalEventHandlers, "addEventListener" | "removeEventListener"> => {
+      const isEventHandlerProperty = (el: HTMLElement, p: string): p is keyof Omit<GlobalEventHandlers, "addEventListener" | "removeEventListener"> => {
         return typeof p === "string" && p.startsWith("on") && p in el;
       };
 
@@ -159,8 +145,8 @@ export function createDomElement<T extends keyof HTMLElementTagNameMap>(
 }
 
 export const createDomElementArgumentHandler =
-  <T extends keyof HTMLElementTagNameMap>(s: T): XDOMOverload<T> =>
-  (detailsOrChildren?: CreateElementDetails<T> | CreateElementChildren<T>, children?: CreateElementChildren<T>): HTMLElementTagNameMap[T] => {
+  <T extends keyof HTMLElementTagMap>(s: T): XDOMOverload<T> =>
+  (detailsOrChildren?: CreateElementDetails<T> | CreateElementChildren<T>, children?: CreateElementChildren<T>): HTMLElementTagMap[T] => {
     if (!detailsOrChildren) {
       return createDomElement(s);
     }
