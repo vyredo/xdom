@@ -10,7 +10,7 @@ export class SignalToElement {
   // handle case when Signal is pass as child of element
   static renderAndSubscribe = (element: HTMLElement, signal: Signal) => {
     if (!(element instanceof HTMLElement)) {
-      throw new Error("this is not sqrx element " + element);
+      throw new Error("this is not custom element " + element);
     }
 
     let oldNode: Element | undefined;
@@ -85,7 +85,7 @@ export class SignalToElement {
   // if the attribute is `value`, this function will try to listen to 'input' event
   static subscribeAttribute = (element: HTMLElement, attributeName: string, signal: Signal) => {
     if (!(element instanceof HTMLElement)) {
-      throw new Error("this is not sqrx element " + element);
+      throw new Error("this is not custome element " + element);
     }
 
     const updateAttribute = (v: string, el: HTMLElement | undefined) => {
