@@ -1,11 +1,28 @@
 import { HTMLElementTagMap } from "./types";
-import { createDomElement } from "./xdom";
+import { createDomElement, CreateElementChildren, CreateElementDetails } from "./xdom";
 
-function createDomElementBound<T extends keyof HTMLElementTagMap>(
-  tagName: T
-): (details?: Parameters<typeof createDomElement>[1], children?: Parameters<typeof createDomElement>[2]) => HTMLElementTagMap[T] {
-  return (details, children) => {
-    return createDomElement(tagName, details, children) as HTMLElementTagMap[T];
+declare function ambientCreateDomElement<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(
+  children: CreateElementDetails<T> | CreateElementChildren<K>
+): HTMLElementTagMap[T];
+
+declare function ambientCreateDomElement<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(
+  details: CreateElementDetails<T>,
+  children: CreateElementChildren<K>
+): HTMLElementTagMap[T];
+function createDomElementBound<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(tagName: T): typeof ambientCreateDomElement<T, K> {
+  return (arg1: any, arg2?: any) => {
+    // Only one argument
+    if (arg2 == null) {
+      if (Array.isArray(arg1) || typeof arg1 === "string" || arg1 instanceof HTMLElement) {
+        return createDomElement(tagName, undefined, arg1 as any) as HTMLElementTagMap[T];
+      }
+
+      // pass arg1 as attribute
+      return createDomElement(tagName, arg1, undefined) as HTMLElementTagMap[T];
+    } else {
+      // Two arguments: treat as details, children
+      return createDomElement(tagName, arg1, arg2) as HTMLElementTagMap[T];
+    }
   };
 }
 
@@ -105,7 +122,7 @@ export const xdom = {
   sub: createDomElementBound("sub"),
   summary: createDomElementBound("summary"),
   sup: createDomElementBound("sup"),
-  table: createDomElementBound<"table">("table"),
+  table: createDomElementBound("table"),
   tbody: createDomElementBound("tbody"),
   td: createDomElementBound("td"),
   template: createDomElementBound("template"),

@@ -9,28 +9,28 @@ export type ElementEventHandlers = {
   [K in keyof GlobalEventHandlersEventMap as `on${K}`]?: (this: Element, ev: GlobalEventHandlersEventMap[K]) => any;
 };
 
-export type CreateElementDetails<T extends keyof HTMLElementTagMap> = Partial<HTMLElementTagMap[T]> & ElementEventHandlers;
+export type CustomHTMLElement<T extends keyof HTMLElementTagMap> = Omit<HTMLElementTagMap[T], "style" | "value"> & {
+  style?: Partial<CSSStyleDeclaration>;
+  key?: string;
+  "data-key"?: string;
+} & ("value" extends keyof HTMLElementTagMap[T] // if property value exists, for example HTMLInputElement has .value
+    ? { value?: string | number | Signal<string> | Signal<number> }
+    : any);
+
+export type CreateElementDetails<T extends keyof HTMLElementTagMap> = Partial<CustomHTMLElement<T>> & ElementEventHandlers;
 
 export type CreateElementChildren<T extends keyof HTMLElementTagMap> =
-  | HTMLElementTagMap[T]
+  | CustomHTMLElement<T>
   | string
   | Signal
   | false
   | undefined
-  | (HTMLElementTagMap[T] | false | undefined | string | Signal)[];
+  | (CustomHTMLElement<T> | false | undefined | string | Signal)[];
 
-export interface XDOMOverload<T extends keyof HTMLElementTagMap> {
-  (children?: CreateElementChildren<T>): HTMLElementTagMap[T];
-  (details?: CreateElementDetails<T>, children?: CreateElementChildren<T>): HTMLElementTagMap[T];
-}
-
-export function createDomElement<T extends keyof HTMLElementTagMap>(tagName: T, children?: CreateElementChildren<T>): HTMLElementTagMap[T];
-
-export function createDomElement<T extends keyof HTMLElementTagMap>(tagName: T, details?: CreateElementDetails<T>, children?: CreateElementChildren<T>): HTMLElementTagMap[T];
 export function createDomElement<T extends keyof HTMLElementTagMap>(
   tagName: T,
-  details?: CreateElementDetails<T> | CreateElementChildren<T>,
-  children?: CreateElementChildren<T>
+  details: CreateElementDetails<T> | undefined,
+  children: CreateElementChildren<T>
 ): HTMLElementTagMap[T] {
   const element = document.createElement(tagName) as HTMLElementTagMap[T];
 
@@ -129,7 +129,7 @@ export function createDomElement<T extends keyof HTMLElementTagMap>(
         } else if (el === false || el == null) {
           return;
         } else {
-          element.appendChild(el);
+          element.appendChild(el as Node);
         }
       });
     } else if (typeof children === "string") {
@@ -137,27 +137,9 @@ export function createDomElement<T extends keyof HTMLElementTagMap>(
     } else if (children instanceof Signal) {
       SignalToElement.renderAndSubscribe(element, children);
     } else {
-      element.appendChild(children);
+      element.appendChild(children as Node);
     }
   }
 
   return element;
 }
-
-export const createDomElementArgumentHandler =
-  <T extends keyof HTMLElementTagMap>(s: T): XDOMOverload<T> =>
-  (detailsOrChildren?: CreateElementDetails<T> | CreateElementChildren<T>, children?: CreateElementChildren<T>): HTMLElementTagMap[T] => {
-    if (!detailsOrChildren) {
-      return createDomElement(s);
-    }
-
-    if (typeof detailsOrChildren === "string") {
-      return createDomElement(s, detailsOrChildren);
-    }
-
-    if (Array.isArray(detailsOrChildren) || detailsOrChildren instanceof Element || detailsOrChildren instanceof Signal) {
-      return createDomElement(s, detailsOrChildren);
-    }
-
-    return createDomElement(s, detailsOrChildren, children);
-  };
