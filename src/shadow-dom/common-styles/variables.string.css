@@ -1,0 +1,89 @@
+/** global-variables **/
+:host {
+  color-scheme: light;
+  --pf: 244 68% 58%;
+  --sf: 306 51% 55%;
+  --af: 174 63% 58%;
+  --nf: 0 0% 87%;
+  --rounded-box: 1em;
+  --rounded-btn: 0.5em;
+  --rounded-badge: 1.9em;
+  --animation-btn: 0.25s;
+  --animation-input: 0.2s;
+  --btn-text-case: uppercase;
+  --btn-focus-scale: 0.95;
+  --border-btn: 1px;
+  --tab-border: 1px;
+  --tab-radius: 0.5em;
+  --p: 244 68% 65%;
+  --pc: 0 0% 100%;
+  --s: 306 51% 62%;
+  --sc: 0 0% 100%;
+  --a: 174 63% 65%;
+  --ac: 219 26% 17%;
+  --n: 0 0% 94%;
+  --nc: 210 24% 16%;
+  --in: 190 100% 37%;
+  --inc: 0 0% 100%;
+  --su: 90 64% 56%;
+  --suc: 219 26% 17%;
+  --wa: 45 100% 58%;
+  --wac: 219 26% 17%;
+  --er: 344 84% 55%;
+  --erc: 0 0% 100%;
+  --b1: 240 23% 97%;
+  --b2: 0 0% 100%;
+  --b3: 225 44% 96%;
+  --bc: 0 0% 10%;
+}
+
+/** global-variables dark variant **/
+@media (prefers-color-scheme: dark) {
+  :host {
+    --color-page-bg: #242424;
+    --color-text: #cccccc;
+    --color-heading: white;
+    --color-link: #ae80ff;
+    --color-btn: #673ab8;
+    --color-btn-secondary: white;
+    --color-btn-background: #eee;
+    --color-hr: #444;
+    --color-quote-bg: #152038;
+    --color-quote-border: #1069cc;
+    --color-quote-text: #c5c5c5;
+    --color-warn-bg: #f2d900;
+    --color-table-border: #3c3c3c;
+    --color-table-even-bg: #1c2027;
+    --color-table-even-bg: #171a20;
+    --color-table-odd-bg: #1c2027;
+    --color-repl-bg: #414141;
+    --color-repl-hover: #555;
+    --color-next-link: #666;
+    --color-sidebar-heading: white;
+    --color-sidebar-divider: #4f4f4f;
+    --color-sidebar-bg: #1a1a1a;
+    --color-sidebar-bg-active: #242424;
+    --color-sidebar-link-active: #ae80ff;
+    --color-sidebar-link: #b0b0b0;
+    --color-footer-lang-divider: #444;
+    --color-footer-lang: #ae80ff;
+    --color-footer-link: #ae80ff;
+    --color-footer-text: #999;
+    --color-footer-bg: #1b1b1b;
+    --color-footer-border: #1b1b1b;
+    --color-error-bg: #230c07;
+    --color-error-heading: #f43678;
+    --color-code-inline-color: white;
+    --color-code-inline-bg: #404040;
+    --color-code-inline-border: #5e5e5e;
+    --color-code-bg: #1c2027;
+    --docsearch-modal-background: #333;
+    --docsearch-footer-background: #333;
+    --docsearch-text-color: #ccc;
+    --docsearch-searchbox-focus-background: #2b2a33;
+    --docsearch-highlight-color: #ae80ff;
+    --docsearch-muted-color: #ccc;
+    --docsearch-hit-color: #ddd;
+    --docsearch-hit-background: #3c4047;
+  }
+}

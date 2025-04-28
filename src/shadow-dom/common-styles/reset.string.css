@@ -1,0 +1,63 @@
+/* Shadow DOM Reset CSS */
+:host,
+*,
+*::before,
+*::after {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+}
+
+:host {
+  display: block;
+  font-size: 100%;
+  font-family: Arial, sans-serif;
+  line-height: 1.5;
+  color: #000;
+  z-index: 2147483647;
+}
+
+img,
+picture,
+video,
+canvas,
+svg {
+  color: #000;
+  display: block;
+  max-width: 100%;
+}
+
+button,
+input,
+select,
+textarea {
+  color: #000;
+  font: inherit;
+}
+
+a {
+  text-decoration: none;
+  color: inherit;
+}
+
+ul,
+ol {
+  list-style: none;
+}
+
+table {
+  border-collapse: collapse;
+  border-spacing: 0;
+}
+
+blockquote,
+q {
+  quotes: none;
+}
+
+blockquote::before,
+blockquote::after,
+q::before,
+q::after {
+  content: '';
+}
