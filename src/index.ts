@@ -1,27 +1,31 @@
 import { HTMLElementTagMap } from "./types";
-import { createDomElement, CreateElementChildren, CreateElementDetails } from "./xdom";
+import { createDomElement, CreateElementChildren, CreateElementAttribute } from "./xdom";
 
+/**
+ * When the first parameter is an object like it will only be inferred as CreateElementAttribute,
+ * else if it's an array it will be inferred as CreateElementChildren.
+ * primitive type like string, number is not allowed except undefined
+ */
 declare function ambientCreateDomElement<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(
-  children: CreateElementDetails<T> | CreateElementChildren<K>
+  attributeOrChildren: CreateElementAttribute<T> | CreateElementChildren<K>
 ): HTMLElementTagMap[T];
 
 declare function ambientCreateDomElement<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(
-  details: CreateElementDetails<T>,
+  attribute: CreateElementAttribute<T>,
   children: CreateElementChildren<K>
 ): HTMLElementTagMap[T];
-function createDomElementBound<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(tagName: T): typeof ambientCreateDomElement<T, K> {
-  return (arg1: any, arg2?: any) => {
-    // Only one argument
-    if (arg2 == null) {
-      if (Array.isArray(arg1) || typeof arg1 === "string" || arg1 instanceof HTMLElement) {
-        return createDomElement(tagName, undefined, arg1 as any) as HTMLElementTagMap[T];
-      }
 
-      // pass arg1 as attribute
-      return createDomElement(tagName, arg1, undefined) as HTMLElementTagMap[T];
+function createDomElementBound<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(tagName: T): typeof ambientCreateDomElement<T, K> {
+  return (arg1: CreateElementAttribute<T> | CreateElementChildren<K>, arg2?: CreateElementChildren<K>) => {
+    // case where there is only one argument
+    if (arg2 == null) {
+      if (Array.isArray(arg1) || typeof arg1 === "string") {
+        return createDomElement(tagName, undefined, arg1 as CreateElementChildren<T>) as HTMLElementTagMap[T];
+      }
+      return createDomElement(tagName, arg1 as CreateElementAttribute<T>, undefined) as HTMLElementTagMap[T];
     } else {
-      // Two arguments: treat as details, children
-      return createDomElement(tagName, arg1, arg2) as HTMLElementTagMap[T];
+      // Two arguments: treat as attribute, children
+      return createDomElement(tagName, arg1 as CreateElementAttribute<T>, arg2 as CreateElementChildren<T>) as HTMLElementTagMap[T];
     }
   };
 }

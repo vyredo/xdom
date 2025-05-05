@@ -1,7 +1,6 @@
 import { Signal } from "./signal";
 import { SignalToElement } from "./signal-to-element";
 import { HTMLElementTagMap } from "./types";
-export type HTMLElementEventHandlerKeys = Extract<keyof HTMLElement, `on${string}`>;
 
 // Enable typescript to detect event-based attributes and suggest the correct type
 // i.e., div({ onclick: value }). Value will be type-checked as (e: MouseEvent) => void
@@ -11,25 +10,23 @@ export type ElementEventHandlers = {
 
 export type CustomHTMLElement<T extends keyof HTMLElementTagMap> = Omit<HTMLElementTagMap[T], "style" | "value"> & {
   style?: Partial<CSSStyleDeclaration>;
-  key?: string;
-  "data-key"?: string;
-} & ("value" extends keyof HTMLElementTagMap[T] // if property value exists, for example HTMLInputElement has .value
-    ? { value?: string | number | Signal<string> | Signal<number> }
-    : any);
+  key?: string | Signal<string>;
+  "data-key"?: string | Signal<string>;
+  value?: string | number | Signal<string> | Signal<number>;
+};
 
-export type CreateElementDetails<T extends keyof HTMLElementTagMap> = Partial<CustomHTMLElement<T>> & ElementEventHandlers;
+export type CreateElementAttribute<T extends keyof HTMLElementTagMap> = ElementEventHandlers & Partial<CustomHTMLElement<T>>;
 
-export type CreateElementChildren<T extends keyof HTMLElementTagMap> =
-  | CustomHTMLElement<T>
-  | string
-  | Signal
-  | false
-  | undefined
-  | (CustomHTMLElement<T> | false | undefined | string | Signal)[];
+/**
+ * Now Children must be an array (like Signal[], string[], HTMLElement[]) or undefined.
+ * This constraint will optimize inferrence time because both CreateElementAttribute, Signal, HTMLElementTag are object types.
+ * Typescript will need longer time to provide type intellisense while inferring between those three.
+ */
+export type CreateElementChildren<T extends keyof HTMLElementTagMap> = undefined | (CustomHTMLElement<T> | false | undefined | string | Signal)[];
 
 export function createDomElement<T extends keyof HTMLElementTagMap>(
   tagName: T,
-  details: CreateElementDetails<T> | undefined,
+  details: CreateElementAttribute<T> | undefined,
   children: CreateElementChildren<T>
 ): HTMLElementTagMap[T] {
   const element = document.createElement(tagName) as HTMLElementTagMap[T];
@@ -67,6 +64,65 @@ export function createDomElement<T extends keyof HTMLElementTagMap>(
     }
 
     Object.entries(details).forEach(([KEY, value]) => {
+      // These key have to be directly assigned to element instead of element.setAttribute('textContent', value)
+      const propertyKeys: string[] = [
+        // Text and content properties
+        "textContent",
+        "innerText",
+        "innerHTML",
+        "outerHTML",
+
+        // Form element properties
+        "value",
+        "checked",
+        "selected",
+        "disabled",
+        "readOnly",
+        "maxLength",
+        "selectedIndex",
+
+        // Style properties
+        "className",
+        "classList",
+
+        // Media and link properties
+        "src",
+        "href",
+        "alt",
+
+        // Special properties
+        "htmlFor",
+        "tabIndex",
+        "scrollTop",
+        "scrollLeft",
+
+        // Additional form properties
+        "min",
+        "max",
+        "step",
+        "defaultValue",
+        "defaultChecked",
+
+        // Select element properties
+        "options",
+        "multiple",
+        "size",
+
+        // Table properties
+        "rows",
+        "cells",
+        "rowSpan",
+        "colSpan",
+
+        // Hidden state properties
+        "hidden",
+      ];
+
+      if (propertyKeys.includes(KEY)) {
+        element[KEY] = value;
+        return;
+      }
+
       // Almost all attribute keys are lowercase, like maxlength, gradientunits, etc.
       const key = KEY.toLowerCase();
       const isEventHandlerProperty = (el: HTMLElement, p: string): p is keyof Omit<GlobalEventHandlers, "addEventListener" | "removeEventListener"> => {
@@ -132,12 +188,6 @@ export function createDomElement<T extends keyof HTMLElementTagMap>(
           element.appendChild(el as Node);
         }
       });
-    } else if (typeof children === "string") {
-      element.innerHTML = children;
-    } else if (children instanceof Signal) {
-      SignalToElement.renderAndSubscribe(element, children);
-    } else {
-      element.appendChild(children as Node);
     }
   }
 

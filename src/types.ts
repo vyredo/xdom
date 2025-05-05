@@ -1,15 +1,3 @@
-declare global {
-  interface HTMLElement {
-    /**
-     * @ts-ignore - Suppress type mismatch for CSSStyleDeclaration override
-     * Make inline css object to be partial, rather than to require all ~500 properties to be defined
-     */
-    set style(cssText: string | Partial<CSSStyleDeclaration>);
-
-    get style(): CSSStyleDeclaration;
-  }
-}
-
 export interface HTMLElementTagMap {
   // Standard elements
   a: HTMLAnchorElement;
