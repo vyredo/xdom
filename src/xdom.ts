@@ -22,7 +22,7 @@ export type CreateElementAttribute<T extends keyof HTMLElementTagMap> = ElementE
  * This constraint will optimize inferrence time because both CreateElementAttribute, Signal, HTMLElementTag are object types.
  * Typescript will need longer time to provide type intellisense while inferring between those three.
  */
-export type CreateElementChildren<T extends keyof HTMLElementTagMap> = undefined | Array<CustomHTMLElement<T> | false | undefined | string | Signal>;
+export type CreateElementChildren<T extends keyof HTMLElementTagMap> = undefined | Array<CustomHTMLElement<T> | undefined | string | Signal>;
 
 export function createDomElement<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(
   tagName: T,
@@ -50,7 +50,7 @@ export function createDomElement<T extends keyof HTMLElementTagMap, K extends ke
         element.appendChild(document.createTextNode(el));
       } else if (el instanceof Signal) {
         SignalToElement.renderAndSubscribe(element, el);
-      } else if (el === false || el == null) {
+      } else if (el == null) {
         return;
       } else {
         element.appendChild(el as Node);
@@ -69,7 +69,7 @@ export function createDomElement<T extends keyof HTMLElementTagMap, K extends ke
     // element['textContent'] = value;
     // instead of
     // element.setAttribute('textContent', value)
-    const propertyKeys: string[] = [
+    const directAssignedKeys: string[] = [
       // Text and content properties
       "textContent",
       "innerText",
@@ -122,7 +122,7 @@ export function createDomElement<T extends keyof HTMLElementTagMap, K extends ke
       "hidden",
     ];
 
-    if (propertyKeys.includes(KEY)) {
+    if (directAssignedKeys.includes(KEY)) {
       element[KEY] = value;
       return;
     }
