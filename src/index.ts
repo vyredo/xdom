@@ -7,7 +7,7 @@ import { createDomElement, CreateElementChildren, CreateElementAttribute } from 
  * primitive type like string, number is not allowed except undefined
  */
 declare function ambientCreateDomElement<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(
-  attributeOrChildren: CreateElementAttribute<T> | CreateElementChildren<K>
+  attributeOrChildren?: CreateElementAttribute<T> | CreateElementChildren<K>
 ): HTMLElementTagMap[T];
 
 declare function ambientCreateDomElement<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(
