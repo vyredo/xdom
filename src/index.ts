@@ -17,17 +17,14 @@ declare function ambientCreateDomElement<T extends keyof HTMLElementTagMap, K ex
 ): HTMLElementTagMap[T];
 
 function createDomElementBound<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(tagName: T): typeof ambientCreateDomElement<T, K> {
-  return (arg1: CreateElementAttribute<T> | CreateElementChildren<K>, arg2?: CreateElementChildren<K>) => {
-    // case where there is only one argument
-    if (arg2 == null) {
-      if (Array.isArray(arg1)) {
-        return createDomElement(tagName, undefined, arg1 as CreateElementChildren<T>) as HTMLElementTagMap[T];
-      }
-      return createDomElement(tagName, arg1 as CreateElementAttribute<T>, undefined) as HTMLElementTagMap[T];
-    } else {
-      // Two arguments: treat as attribute, children
-      return createDomElement(tagName, arg1 as CreateElementAttribute<T>, arg2 as CreateElementChildren<T>) as HTMLElementTagMap[T];
+  return (arg1?: CreateElementAttribute<T> | CreateElementChildren<K>, arg2?: CreateElementChildren<K>) => {
+    // If first argument is an array, it's the children
+    if (Array.isArray(arg1)) {
+      return createDomElement(tagName, undefined, arg1);
     }
+
+    // Otherwise, first argument is attributes and second is children
+    return createDomElement(tagName, arg1, arg2);
   };
 }
 
