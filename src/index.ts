@@ -2,9 +2,10 @@ import { HTMLElementTagMap } from "./types";
 import { createDomElement, CreateElementChildren, CreateElementAttribute } from "./xdom";
 
 /**
- * When the first parameter is an object like it will only be inferred as CreateElementAttribute,
- * else if it's an array it will be inferred as CreateElementChildren.
- * primitive type like string, number is not allowed except undefined
+ * To optimize the inferrence:
+ * - if parameter is an array it will be inferred as CreateElementChildren
+ * - if parameter is an object it will be inferred as CreateElementAttribute
+ * - no longer accepting primitive value except undefined
  */
 declare function ambientCreateDomElement<T extends keyof HTMLElementTagMap, K extends keyof HTMLElementTagMap>(
   attributeOrChildren?: CreateElementAttribute<T> | CreateElementChildren<K>
@@ -19,7 +20,7 @@ function createDomElementBound<T extends keyof HTMLElementTagMap, K extends keyo
   return (arg1: CreateElementAttribute<T> | CreateElementChildren<K>, arg2?: CreateElementChildren<K>) => {
     // case where there is only one argument
     if (arg2 == null) {
-      if (Array.isArray(arg1) || typeof arg1 === "string") {
+      if (Array.isArray(arg1)) {
         return createDomElement(tagName, undefined, arg1 as CreateElementChildren<T>) as HTMLElementTagMap[T];
       }
       return createDomElement(tagName, arg1 as CreateElementAttribute<T>, undefined) as HTMLElementTagMap[T];
