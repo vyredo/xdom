@@ -1,95 +1,279 @@
-# Using XDOM
+# XDOM Documentation
 
-XDom is a thin wrapper on top of original HTML that enables signals to work seamlessly.
+## Introduction
 
-## How to use XDOM
+XDOM is a lightweight, declarative DOM creation library that enables seamless integration with reactive signals. It provides a simple, intuitive API for creating complex DOM structures without the overhead of a virtual DOM, while supporting reactivity through the signal system.
+It can be easily mounted as shadow component.
 
-```javascript
-import { div, p } from "xdom";
+## Basic Usage
 
-const element = div({ className: "div-container", style: { color: "red" } }, [p("hello world"), p({ id: "myId" }, "hello guys")]);
-
-document.body.append(element);
-```
-
-It's quite intuitive and simple.
-The element is created by calling the tag name like `div()`, or `p()`.
-
-- For the first argument, it can be any attribute or `Children`.
-- For the second argument, it can be undefined or `Children`
+XDOM uses a simple, functional approach to create DOM elements:
 
 ```typescript
-type Children = string | Element | Signal | Array<string | Element | Signal>;
+// Import specific element functions
+import { div, p, button } from "~common/dom/xdom";
+
+// Or import everything
+import * as xdom from "~common/dom/xdom";
+
+const element = div(
+  { className: "container" }, 
+  [
+    p(["Hello world"]), 
+    button({ id: "myButton" }, ["Click me"])
+  ]
+);
+
+document.body.append(element);
 ```
 
-## How to use XDOM with signal
+Each element function accepts two parameters:
 
-Signals can be passed to attributes or children.
+- First parameter: Attributes object or children
+- Second parameter: Children (if the first parameter is attributes)
+- Children must be an array
 
-### Naive Example
+## Creating Elements
+
+### Simple Elements
 
 ```javascript
-import { div, p } from "xdom";
-import { signal, computed } from "signal";
+// Simple element with text
+const paragraph = p("Hello world");
 
-const count$ = signal(0);
-const colorState$ = computed(() => (count.value % 2 == 0 ? "red" : "green"));
+// Element with attributes and text
+const button = button(
+  { id: "submitBtn", className: "primary" }, 
+  ["Submit"]
+);
+```
 
-setInterval(() => {
-  count.value++;
-}, 1000);
+### Nested Elements
 
-const element = div({ className: "div-container", style: { color: colorState$ } }, [
-  p("hello world"),
-  // this P will not be reactive because we unwrap signal and pass a string
-  p({ id: "myId" }, `my color is \${colorState$}`),
+```javascript
+const card = div({ className: "card" }, [
+  div({ className: "card-header" }, [h3(["Card Title"])]),
+  div({ className: "card-body" }, [p(["Card content goes here"]), button({ className: "btn" }, ["Action"])]),
+]);
+```
+
+## Working with Attributes
+
+XDOM supports all standard HTML attributes as well as inline styles:
+
+```javascript
+const styledDiv = div(
+  {
+    id: "uniqueId",
+    className: "highlight-box",
+    style: {
+      color: "red",
+      backgroundColor: "#f5f5f5",
+      padding: "20px",
+      borderRadius: "5px",
+    },
+    "data-custom": "value", // Custom data attributes
+  },
+  ["Content here"]
+);
+```
+
+## Integration with Signals
+
+XDOM works seamlessly with signals to create reactive DOM elements.
+
+### Basic Signal Usage
+
+```javascript
+import { signal, computed } from './signal';
+
+const count = signal(0);
+const display = computed(() =&gt; `Count: ${count.value}`);
+
+const counter = div({ className: 'counter' }, [
+  p(display),
+  button({
+    onclick: () => count.value++
+  }, ['Increment'])
+]);
+```
+
+When `count.value` changes, the text inside the paragraph will automatically update.
+
+### Reactive Attributes
+
+Signals can be used for attributes as well:
+
+```javascript
+const isActive = signal(false);
+const buttonClass = computed(() => (isActive.value ? "btn-active" : "btn-inactive"));
+
+const toggleButton = button(
+  {
+    className: buttonClass,
+    onclick: () => (isActive.value = !isActive.value),
+  },
+  ["Toggle"]
+);
+```
+
+### Two-way Binding
+
+Input elements automatically support two-way binding with signals:
+
+```javascript
+const inputValue = signal("");
+
+const input = input({
+  value: inputValue,
+  placeholder: "Type something...",
+});
+
+const display = p([
+  computed(() => `You typed: ${inputValue.value}`)
+]);
+```
+
+## Event Handling
+
+Event handlers are specified as attributes with the `on` prefix:
+
+```javascript
+const clickHandler = (e) => {
+  console.log('Button clicked', e);
+};
+
+const button = button({
+  onclick: clickHandler,
+  onmouseover: () => console.log('Mouse over'),
+  onmouseout: () => console.log('Mouse out')
+}, ['Interactive Button']);
+```
+
+## Working with Lists
+
+For rendering dynamic lists efficiently, use the `SignalsToDoms` helper:
+
+```javascript
+import { SignalsToDoms } from './signal-to-dom';
+
+const items = signal([
+  { 'data-key': 'item-1', text: 'First item' },
+  { 'data-key': 'item-2', text: 'Second item' }
 ]);
 
-document.body.append(element);
+const list = ul([
+  computed(() =>
+    SignalsToDoms(items).map((item) =>
+      li(
+        { 'data-key': item.value['data-key'] }, 
+        [item.value.text]
+      )
+    )
+  )
+]);
+
+// Add a new item
+setTimeout(() => {
+  items.value = [
+    ...items.value,
+    { 'data-key': 'item-3', text: 'New item' }
+  ];
+}, 2000);
 ```
 
-### Better Example
+The `data-key` property is essential for optimized rendering - it allows XDOM to efficiently update only the elements that change.
+
+## Best Practices
+
+1. **Always provide keys for list items**: Use `data-key` for list items to ensure efficient updates.
+2. **Use computed signals for derived values**: When combining multiple signals, use `computed` for better performance.
+3. **Separate logic from presentation**: Keep complex logic in separate functions, making your XDOM code focused on structure.
+4. **Organize components logically**: Create helper functions for reusable component patterns.
+5. **Leverage CSS classes instead of inline styles** when possible for better performance and maintainability.
+
+## Performance Considerations
+
+- XDOM directly manipulates the DOM without a virtual DOM, making it performant for direct updates
+- For large lists, always use keyed rendering with `SignalsToDoms`
+- Minimize deep nesting of computed signals to avoid unnecessary recalculations
+- Use `batch()` when making multiple signal updates to prevent excessive re-renders
+
+## API Reference
+
+### Core Functions
+
+- `div(), p(), span(), etc.`: Create HTML elements
+- `createDomElement()`: Low-level function to create elements
+
+### Signal Integration
+
+- `SignalToElement.renderAndSubscribe()`: Renders a signal value to an element and updates it when the signal changes
+- `SignalToElement.subscribeAttribute()`: Subscribes an element attribute to a signal
+- `SignalsToDoms()`: Helper for efficiently rendering lists of signals
+
+## Examples
+
+### Todo List Application
 
 ```javascript
-import { div, p } from "xdom";
-import { signal, computed } from "signal";
+import { div, h1, input, button, ul, li } from '~common/dom/xdom';
+import { signal, computed } from './signal';
+import { SignalsToDoms } from './signal-to-dom';
 
-const count$ = signal(0);
-const colorState$ = computed(() => (count.value % 2 == 0 ? "red" : "green"));
+// State management with signals
+const newTodo = signal('');
+const todos = signal([]);
 
-// the string will be wrapped in a computed signal
-const element$ = computed(() => `my color is \${colorState$.value}`);
+// Create a unique ID for each todo
+const createTodo = () =&gt; {
+  if (newTodo.value.trim() === '') return;
 
-setInterval(() => {
-  count.value++;
-}, 1000);
+  todos.value = [
+    ...todos.value,
+    {
+      'data-key': `todo-${Date.now()}`,
+      text: newTodo.value,
+      completed: false
+    }
+  ];
+  newTodo.value = '';
+};
 
-const element = div({ className: "div-container", style: { color: colorState$ } }, [p("hello world"), p({ id: "myId" }, element$)]);
+// Toggle completed status
+const toggleTodo = (id) =&gt; {
+  todos.value = todos.value.map(todo =&gt;
+    todo['data-key'] === id
+      ? {...todo, completed: !todo.completed}
+      : todo
+  );
+};
 
-document.body.append(element);
-```
+// UI components
+const app = div({ className: 'todo-app' }, [
+  h1(['Todo List']),
 
-That's basically it. As long as we pass a signal to the element, we handle the logic of making it reactive.
+  div({ className: 'add-todo' }, [
+    input({
+      value: newTodo,
+      placeholder: 'Add a new task...',
+      onkeyup: (e) => e.key === 'Enter' && createTodo()
+    }),
+    button({ onclick: createTodo }, ['Add'])
+  ]),
 
-## Example for textarea, input, select
+  ul({ className: 'todo-list' }, [
+    computed(() =>
+      SignalsToDoms(todos).map((todo) =>
+        li({
+          'data-key': todo.value['data-key'],
+          className: todo.value.completed ? 'completed' : '',
+          onclick: () => toggleTodo(todo.value['data-key'])
+        }, todo.value.text)
+      )
+    )
+  ])
+]);
 
-For `textarea`, `input`, and `select`, there is pre-built logic that knows when `onchange` or `oninput` is fired, and it will re-render the component that has a signal.
-
-```javascript
-import { select, textarea } from "xdom";
-import { signal, computed } from "signal";
-
-const count$ = signal(0);
-const colorState$ = computed(() => (count.value % 2 == 0 ? "red" : "green"));
-
-// the string will be wrapped in a computed signal
-const element$ = computed(() => `my color is \${colorState$.value}`);
-
-setInterval(() => {
-  count.value++;
-}, 1000);
-
-const element = div({ className: "div-container", style: { color: colorState$ } }, [textarea({ value: count$ })]);
-
-document.body.append(element);
+document.body.append(app);
 ```
