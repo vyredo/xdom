@@ -14,6 +14,8 @@ export class SignalToElement {
     }
 
     let oldNode: Element | undefined;
+    // track which data-keys are present so we can remove stale ones
+    let oldDataKeys: Set<string> = new Set();
     // weak reference to allow element to be GC and not bound by signal.subscribe()
     const elementRef = new WeakRef(element);
     const unsubscribe = signal.subscribe((newValue) => {
@@ -22,15 +24,23 @@ export class SignalToElement {
       // element already GC
       if (!weakElement) {
         oldNode = undefined;
+        oldDataKeys = new Set();
         return unsubscribe();
       }
 
       if (newValue instanceof Element) {
-        weakElement.appendChild(newValue);
+        if (oldNode) {
+          weakElement.replaceChild(newValue, oldNode);
+        } else {
+          weakElement.appendChild(newValue);
+        }
+        oldNode = newValue;
         return;
       }
 
       if (Array.isArray(newValue) && newValue[0] instanceof Element) {
+        const newDataKeys = new Set<string>();
+
         newValue.forEach((el) => {
           // Check if item is to be removed
           if (el instanceof HTMLElement && el.getAttribute("data-to-unmount")) {
@@ -47,10 +57,12 @@ export class SignalToElement {
               `);
           }
 
-          const oldElement = mapIdToWeakRef.get(dataKey)?.deref();
+          if (dataKey) newDataKeys.add(dataKey);
+
+          const oldElement = dataKey ? mapIdToWeakRef.get(dataKey)?.deref() : undefined;
           if (!oldElement) {
             weakElement.append(el);
-            mapIdToWeakRef.set(dataKey, new WeakRef(el));
+            if (dataKey) mapIdToWeakRef.set(dataKey, new WeakRef(el));
             return;
           }
 
@@ -68,16 +80,26 @@ export class SignalToElement {
             });
           }
         });
+
+        // Remove elements that no longer exist in the new array
+        for (const oldKey of oldDataKeys) {
+          if (!newDataKeys.has(oldKey)) {
+            const staleEl = mapIdToWeakRef.get(oldKey)?.deref();
+            if (staleEl && staleEl.parentNode === weakElement) {
+              staleEl.remove();
+            }
+            mapIdToWeakRef.delete(oldKey);
+          }
+        }
+        oldDataKeys = newDataKeys;
         return;
       }
 
-      if (signal.value instanceof Element && oldNode) {
-        weakElement.replaceChild(newValue, oldNode);
-        oldNode = newValue;
-        return;
+      if (oldNode) {
+        oldNode.remove();
+        oldNode = undefined;
       }
-
-      weakElement.textContent = signal.value != null ? String(signal.value) : "";
+      weakElement.textContent = newValue != null ? String(newValue) : "";
     });
   };
 

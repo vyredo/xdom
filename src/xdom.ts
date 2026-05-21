@@ -65,18 +65,11 @@ export function createDomElement<T extends keyof HTMLElementTagMap, K extends ke
   }
 
   Object.entries(attribute).forEach(([KEY, value]) => {
-    // These key have to be directly assigned to element instead of element.setAttribute
-    // element['textContent'] = value;
-    // instead of
-    // element.setAttribute('textContent', value)
-    const directAssignedKeys: string[] = [
-      // Text and content properties
+    const directAssignedKeys = new Set([
       "textContent",
       "innerText",
       "innerHTML",
       "outerHTML",
-
-      // Form element properties
       "value",
       "checked",
       "selected",
@@ -84,45 +77,31 @@ export function createDomElement<T extends keyof HTMLElementTagMap, K extends ke
       "readOnly",
       "maxLength",
       "selectedIndex",
-
-      // Style properties
       "className",
       "classList",
-
-      // Media and link properties
       "src",
       "href",
       "alt",
-
-      // Special properties
       "htmlFor",
       "tabIndex",
       "scrollTop",
       "scrollLeft",
-
-      // Additional form properties
       "min",
       "max",
       "step",
       "defaultValue",
       "defaultChecked",
-
-      // Select element properties
       "options",
       "multiple",
       "size",
-
-      // Table properties
       "rows",
       "cells",
       "rowSpan",
       "colSpan",
-
-      // Hidden state properties
       "hidden",
-    ];
+    ]);
 
-    if (directAssignedKeys.includes(KEY)) {
+    if (directAssignedKeys.has(KEY)) {
       element[KEY] = value;
       return;
     }
@@ -133,28 +112,9 @@ export function createDomElement<T extends keyof HTMLElementTagMap, K extends ke
       return typeof p === "string" && p.startsWith("on") && p in el;
     };
 
-    // Handle onclick, onmouseover, onload, etc.
     if (isEventHandlerProperty(element, key) && typeof value === "function") {
-      // Typescript strictly controls what events can be assigned to which
-      // elements, which is probably a good thing for being thorough, but
-      // in reality you can call 'addEventListener' with any string, and
-      // and handler type, as the construction of custom events is allowed.
-      //
-      // In our case, we're not actually using more than the basics, onclick,
-      // onkeydown, onfocus etc.. which are applicable almost anywhere.
-      //
-      // The reason why we don't want to write the correct verification code
-      // is that the amount of variants that typescript has to parse blows
-      // up the memory in V8 and crashes the process. So at this stage we
-      // will just rely on typechecking from the caller and allow it through
-      // at this point. If it ever becomes an issue for some reason, we can
-      // revisit later. Ideally we would list out each event properly rather
-      // than trying to get typescript to infer everything correctly. This would
-      // be many lines of repetitive code but it would preserve typechecking
-      // and stop the VM from blowing up
-      //
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       element[key] = value as (...args: any[]) => any;
+      return;
     }
 
     if (typeof value === "boolean") {

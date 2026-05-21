@@ -12,9 +12,10 @@ export function showAnimation(elem: HTMLElement, delay = 100) {
 }
 
 export async function hideAnimation(elem: HTMLElement, time: number) {
-  elem?.classList.add("hide");
-  elem?.classList.remove("show");
+  if (!elem) return;
+  elem.classList.add("hide");
+  elem.classList.remove("show");
 
   await sleep(time);
-  elem?.classList.remove("hide");
+  elem.classList.remove("hide");
 }

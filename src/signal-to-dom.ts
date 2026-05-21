@@ -15,34 +15,41 @@ const getDataKey = (i: unknown | Signal<unknown>) => {
  * element need property key, notice the key below
  * ['abc','def'].map(str => <div key={str}>{str}</div>)
  */
+const unwrappedSignalCache = new WeakMap<object, Signal<any>>();
+
+function toSignal<T>(value: T): Signal<T> {
+  if (value instanceof Signal) return value;
+  if (typeof value === "object" && value !== null) {
+    const cached = unwrappedSignalCache.get(value);
+    if (cached) return cached;
+    const sig = signal(value);
+    unwrappedSignalCache.set(value, sig);
+    return sig;
+  }
+  return signal(value);
+}
+
 export function SignalsToDoms<X extends Record<string, unknown> & { "data-key"?: string }>(newSignal: Signal<X[]>) {
   const handleMapFn = (cb: (item: Signal<X>, idx: number, arr: X[]) => HTMLElement & { "data-key"?: string }) => {
     const newChildrenIds: string[] = [];
     const arrayOfElements = newSignal.value.map((objOrSignal, idx) => {
-      const sig = objOrSignal instanceof Signal ? objOrSignal : signal(objOrSignal);
+      const sig = toSignal(objOrSignal);
       const item = cb(sig, idx, newSignal.value);
 
       if (!item || !(item instanceof Element)) {
         throw new Error(`found non HTMLElement ${item}`);
       }
 
-      let dataKey =
-        item.getAttribute("data-key") ?? // use old data-key
-        getDataKey(objOrSignal) ?? // or use data-key that is passed in signal
-        item["data-key"]; // or property data-key
-      if (!dataKey) {
-        console.warn(`Warning: find a list of item that has no data-key, please include data-key to avoid rerending this item:  ${item}`);
-      }
-      dataKey = dataKey ?? RNG(10);
+      const dataKey =
+        item.getAttribute("data-key") ??
+        getDataKey(objOrSignal) ??
+        item["data-key"] ??
+        RNG(10);
 
-      item.setAttribute("data-key", dataKey);
+      item.setAttribute("data-key", String(dataKey));
       newChildrenIds.push(dataKey);
       return item;
     });
-
-    //TODO: if newChildren.length < oldChildren this indicate that user has delete 1 of item
-    //      right now, to remove it from DOMTree, developer must manually run element.remove()
-    //      we might be able to detect the difference and run `element.remove()` in this function
 
     return arrayOfElements;
   };
